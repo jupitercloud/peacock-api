@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package peacock.crawler.v1;
+
+import "peacock/crawler/v1/crawl.proto";
+
+message AddCrawlSubjectRequest {
+  // (Required) Seed URL
+  string seed_url = 1;
+  // Optional crawl subject group. When set, crawl subjects in the same group initialize a single crawl process.
+  string subject_group = 2;
+  // Crawl scope
+  CrawlScope scope = 3;
+  // Augment the scope by allowing extra links N 'hops' beyond the current scope.
+  int32 depth = 4;
+  // Minimum crawl period, in seconds between crawl processes.
+  // The lowest crawl_period in a subject_group is applied.
+  // 0 applies a default period, whereas a negative number is an infinite period.
+  int32 period = 5;
+  // Ephemeral CrawlSubjects are automatically removed once they have run once for a successful crawl job.
+  bool ephemeral = 6;
+}
+
+message AddCrawlSubjectResponse {
+  CrawlSubject subject = 1;
+}
+
+message RemoveCrawlSubjectRequest {
+  string subject_id = 1;
+}
+
+message RemoveCrawlSubjectResponse { }
+
+message GetCrawlSubjectRequest {
+  string subject_id = 1;
+}
+
+message GetCrawlSubjectResponse {
+  // True when the subject was found.
+  bool exists = 1;
+  // The crawl subject.
+  CrawlSubject subject = 2;
+}
+
+message ListCrawlSubjectsRequest {
+  // Filter crawl subjects matching seed_url.
+  string seed_url = 1;
+  // Filter crawl subjects matching domain (includes subdomains).
+  string domain = 2;
+  // Filter crawl subjects matching host (exact match).
+  string host = 3;
+  // Filter crawl subjects in subject_group
+  string subject_group = 4;
+}
+
+message ListCrawlSubjectsResponse {
+  repeated CrawlSubject subjects = 1;
+}
+
+// Set options which apply to crawls in this named subject group.
+message SetSubjectGroupPolicyRequest {
+  string subject_group = 1;
+  SubjectGroupPolicy policy = 2;
+}
+
+message SetSubjectGroupPolicyResponse { }
+
+message GetSubjectGroupPolicyRequest {
+  string subject_group = 1;
+}
+
+// Get the policy for a subject group
+message GetSubjectGroupPolicyResponse {
+  // True when the subject group policy exists.
+  // When a subject group policy is not set, a default policy is returned.
+  bool exists = 1;
+  // The subject group policy.
+  SubjectGroupPolicy policy = 2;
+}
+
+message GetCrawlScheduleRequest {
+  // Get the schedule for this domain.
+  string domain = 1;
+  // Optional subject_group for the query.
+  string subject_group = 2;
+}
+
+message GetCrawlScheduleResponse {
+  // The schedule data, when scheduled.
+  CrawlSchedule schedule = 1;
+  // True when the schedule is set.
+  bool scheduled = 2;
+}
+
+message ListCrawlDataRequest {
+  // Filter crawls matching domain
+  string domain = 1;
+  // Filter crawls in subject_group
+  string subject_group = 2;
+}
+
+message ListCrawlDataResponse {
+  repeated CrawlData crawls = 1;
+}
+
+// Peacock Crawler API
+service CrawlerService {
+
+  // Register a subject for crawling.
+  rpc AddCrawlSubject (AddCrawlSubjectRequest) returns (AddCrawlSubjectResponse) { }
+
+  // Deregister subject for crawling.
+  rpc RemoveCrawlSubject (RemoveCrawlSubjectRequest) returns (RemoveCrawlSubjectResponse) { }
+
+  // Get a crawl subject.
+  rpc GetCrawlSubject (GetCrawlSubjectRequest) returns (GetCrawlSubjectResponse) { }
+
+  // Get subjects registered for crawling.
+  rpc ListCrawlSubjects (ListCrawlSubjectsRequest) returns (ListCrawlSubjectsResponse) { }
+
+  // Set policy options for a named subject group.
+  rpc SetSubjectGroupPolicy (SetSubjectGroupPolicyRequest) returns (SetSubjectGroupPolicyResponse) { }
+
+  // Get policy options for a named subject group.
+  rpc GetSubjectGroupPolicy (GetSubjectGroupPolicyRequest) returns (GetSubjectGroupPolicyResponse) { }
+
+  // Get current crawl schedule for a domain.
+  rpc GetCrawlSchedule (GetCrawlScheduleRequest) returns (GetCrawlScheduleResponse) { }
+
+  // List the crawler results
+  rpc ListCrawlData (ListCrawlDataRequest) returns (ListCrawlDataResponse) { }
+
+}

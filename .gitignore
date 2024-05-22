@@ -1,0 +1,7 @@
+./v1
+package-lock.json
+node_modules
+src
+gen/ts/src
+gen/clj
+gen/cpp

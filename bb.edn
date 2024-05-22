@@ -1,0 +1,5 @@
+{:tasks
+ {:requires ([babashka.fs :as fs])
+
+  lint {:doc "Lint .proto files"
+        :task (shell "buf" "lint")}}}

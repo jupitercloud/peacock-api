@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package peacock.crawler.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Crawl scopes, mapping to browsertrix scopes:
+// https://crawler.docs.browsertrix.com/user-guide/crawl-scope/#configuring-pages-included-or-excluded-from-a-crawl
+enum CrawlScope {
+  // Unspecified scope. Falls back to CRAWL_SCOPE_PAGE.
+  CRAWL_SCOPE_UNSPECIFIED = 0;
+  // crawl only this page and no additional links.
+  CRAWL_SCOPE_PAGE = 1;
+  // crawl any pages in the same directory
+  CRAWL_SCOPE_PREFIX = 2;
+  // crawl pages that share the same host.
+  CRAWL_SCOPE_HOST = 3;
+  // crawl pages that share the same domain and subdomains
+  CRAWL_SCOPE_DOMAIN = 4;
+}
+
+message CrawlSubject {
+  // Subject ID for the configuration.
+  string subject_id = 1;
+  // Seed URL
+  string seed_url = 2;
+  // Host parsed from the seed_url.
+  string host = 3;
+  // Domain parsed from the seed_url.
+  string domain = 4;
+  // Optional crawl subject group. When set, crawl subjects in the same group for a domain initialize a single crawl process.
+  string subject_group = 5;
+  // Crawl scope
+  CrawlScope scope = 6;
+  // Augment the scope by allowing extra links N 'hops' beyond the current scope.
+  int32 depth = 7;
+  // Minimum crawl period, in seconds between crawl processes.
+  // The lowest crawl_period in a subject_group is applied.
+  // 0 applies a default period, whereas a negative number is an infinite period.
+  int32 period = 8;
+  // Ephemeral CrawlSubjects are automatically removed once they have run once for a successful crawl job.
+  bool ephemeral = 9;
+}
+
+enum CrawlScheduleStatus {
+  CRAWL_SCHEDULE_STATUS_UNSPECIFIED = 0;
+  CRAWL_SCHEDULE_STATUS_SCHEDULED = 1;
+  CRAWL_SCHEDULE_STATUS_RUNNING = 2;
+}
+
+message CrawlSchedule {
+  // Domain for the schedule
+  string domain = 1;
+  // Subject group for the schedule
+  string subject_group = 2;
+  // When the next crawl is scheduled to run.
+  // This timestamp may be in the past if the crawler is behind schedule.
+  google.protobuf.Timestamp scheduled_at = 3;
+  // Scheduled job status.
+  CrawlScheduleStatus status = 4;
+}
+
+message CrawlArtifact {
+  string name = 1; // File name
+  string url = 2; // Accessible URL
+  string content_type = 3; // Mime type
+  int64 size = 4; // File size
+}
+
+enum TextExtractionMode {
+  // Default: No text extraction
+  TEXT_EXTRACTION_MODE_UNSPECIFIED = 0;
+  // No text extraction
+  TEXT_EXTRACTION_MODE_NONE = 1;
+  // Extract text content to pages.jsonl
+  TEXT_EXTRACTION_MODE_PAGES = 2;
+}
+
+// Options which apply to crawls in a subject group.
+message SubjectGroupPolicy {
+  // Default minimum crawl period, in seconds between crawl processes.
+  // This default may be superseded by a nonzero `period` on any CrawlSubject in the group.
+  // The lowest crawl_period in a subject_group is applied.
+  // 0 applies a default period, whereas a negative number is an infinite period.
+  int32 default_period_seconds = 1;
+
+  // Time limit for crawl processes in a single domain.
+  // When zero, a default time limit is applied.
+  int32 time_limit_seconds = 2;
+
+  // Timeout in seconds for an individual page load.
+  int32 page_load_timeout_seconds = 3;
+
+  // Limit the number of pages per crawl process.
+  // 0 applies a default limit
+  int32 page_limit = 4;
+
+  // Configure text text content extraction.
+  TextExtractionMode text_extraction_mode = 5;
+
+  // Save a .wacz artifact for the crawl, to create a full replay archive.
+  bool archive_wacz = 6;
+
+  // Save .warc artifacts for the crawl.
+  bool archive_warc = 7;
+
+  // Generate a .cdxj artifact for the crawl. Requires archive_warc.
+  bool generate_cdx = 8;
+}
+
+message CrawlData {
+  string crawl_id = 1;
+  string domain = 2;
+  string subject_group = 3;
+  google.protobuf.Timestamp started_at = 4;
+  google.protobuf.Timestamp stopped_at = 5;
+  repeated CrawlArtifact artifacts = 6;
+  SubjectGroupPolicy subject_group_policy = 7;
+}
